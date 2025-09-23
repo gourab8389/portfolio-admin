@@ -1,29 +1,52 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import Cookies from "js-cookie";
-import { redirect } from "next/navigation";
+import { AxiosResponse, AxiosError } from 'axios';
+import { AuthApiInstance } from "@/lib/apis";
 
-export type User = {
-  id: string;
+export type AuthUser = {
+  id: number;
+  username: string;
   email: string;
-  password: string;
-  name: string;
-  role: string;
-  createdAt: Date;
-  updatedAt: Date;
+  role: 'admin';
 };
 
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message: string;
+  data?: T;
+}
+
+export interface LoginResponse extends ApiResponse<{
+  user: AuthUser;
+  token: string;
+}> {}
+
 interface AuthState {
-  user: User | null;
+  user: AuthUser | null;
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  setUser: (user: User | null) => void;
+  error: string | null;
+  
+  // Actions
+  setUser: (user: AuthUser | null) => void;
   setToken: (token: string | null) => void;
   setLoading: (isLoading: boolean) => void;
-  login: (userData: User, token: string) => void;
-  logout: () => void;
+  setError: (error: string | null) => void;
+  login: (credentials: LoginRequest) => Promise<void>;
+  logout: () => Promise<void>;
+  validateToken: () => Promise<boolean>;
+  clearError: () => void;
 }
+
+const TOKEN_KEY = "portfolio-admin-token";
+const TOKEN_EXPIRY_DAYS = 7;
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -32,67 +55,139 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isLoading: false,
       isAuthenticated: false,
+      error: null,
 
       setUser: (user) => set({ user }),
-      setToken: (token) => set({ token }),
-
-      setLoading: (isLoading) => {
-        set({ isLoading });
-      },
-
-      login: (userData, token) => {
-        set({ isLoading: true });
-
-        try {
-          // Set the cookie
-          Cookies.set("token", token, { path: "/", expires: 30 });
-
-          // Verify the token is actually set before proceeding
-          const verifyToken = () => {
-            const storedToken = Cookies.get("token");
-
-            if (storedToken) {
-              // Token is confirmed set, update state and redirect
-              set({
-                user: userData,
-                token,
-                isAuthenticated: true,
-                isLoading: false,
-              });
-
-              if (userData.role === "ADMIN") {
-                redirect("/dashboard");
-              } else {
-                redirect("/waiting");
-              }
-            } else {
-              setTimeout(verifyToken, 100);
-            }
-          };
-
-          verifyToken();
-        } catch (error) {
-          console.error("Login error:", error);
-          set({ isLoading: false });
+      
+      setToken: (token) => {
+        set({ token });
+        if (token) {
+          Cookies.set(TOKEN_KEY, token, { 
+            path: "/", 
+            expires: TOKEN_EXPIRY_DAYS,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+          });
+        } else {
+          Cookies.remove(TOKEN_KEY, { path: "/" });
         }
       },
 
-      logout: () => {
-        set({ isLoading: true });
-        try {
-          Cookies.remove("token", { path: "/" });
+      setLoading: (isLoading) => set({ isLoading }),
+      
+      setError: (error) => set({ error }),
+      
+      clearError: () => set({ error: null }),
 
+      login: async (credentials: LoginRequest) => {
+        set({ isLoading: true, error: null });
+        
+        try {
+          const response = await AuthApiInstance.post<LoginResponse>('/login', credentials);
+          
+          if (response.data.success && response.data.data) {
+            const { user, token } = response.data.data;
+            
+            // Set token in cookies
+            Cookies.set(TOKEN_KEY, token, { 
+              path: "/", 
+              expires: TOKEN_EXPIRY_DAYS,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'strict'
+            });
+            
+            // Update axios instance default headers
+            AuthApiInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            
+            set({
+              user,
+              token,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null
+            });
+            
+          } else {
+            throw new Error(response.data.message || 'Login failed');
+          }
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+          set({ 
+            error: errorMessage,
+            isLoading: false,
+            isAuthenticated: false,
+            user: null,
+            token: null
+          });
+          
+          // Remove token from cookies on error
+          Cookies.remove(TOKEN_KEY, { path: "/" });
+          delete AuthApiInstance.defaults.headers.common['Authorization'];
+          
+          throw new Error(errorMessage);
+        }
+      },
+
+      logout: async () => {
+        set({ isLoading: true });
+        
+        try {
+          // Remove token from cookies
+          Cookies.remove(TOKEN_KEY, { path: "/" });
+          
+          // Remove authorization header from axios
+          delete AuthApiInstance.defaults.headers.common['Authorization'];
+          
           set({
             user: null,
             token: null,
             isAuthenticated: false,
+            isLoading: false,
+            error: null
           });
-        } finally {
-          set({ isLoading: false });
+          
+        } catch (error) {
+          console.error('Logout error:', error);
+          // Still clear the state even if there's an error
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null
+          });
+        }
+      },
+
+      validateToken: async () => {
+        const { token } = get();
+        
+        if (!token) {
+          set({ isAuthenticated: false, user: null });
+          return false;
+        }
+        
+        try {
+          // Set authorization header
+          AuthApiInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
+          const response = await AuthApiInstance.get<ApiResponse<{ admin: { email: string } }>>('/validate');
+          
+          if (response.data.success) {
+            set({ isAuthenticated: true });
+            return true;
+          } else {
+            // Token is invalid
+            get().logout();
+            return false;
+          }
+        } catch (error) {
+          console.error('Token validation failed:', error);
+          get().logout();
+          return false;
         }
       },
     }),
-
     {
       name: "portfolio-admin-auth",
       partialize: (state) => ({
@@ -100,56 +195,85 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      
+      // Rehydrate the store and validate token on app load
+      onRehydrateStorage: () => (state) => {
+        if (state?.token) {
+          // Set the authorization header if token exists
+          AuthApiInstance.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
+          
+          // Validate token on rehydration
+          state.validateToken();
+        }
+      },
     }
   )
 );
 
+// Hook for easier usage
 export const useAuth = () => {
   const {
     user,
     token,
     isLoading,
     isAuthenticated,
-    login: storeLogin,
-    logout: storeLogout,
+    error,
+    login,
+    logout,
+    validateToken,
     setLoading,
+    clearError,
   } = useAuthStore();
-
-  const loginUser = async (userData: User, token: string) => {
-    try {
-      setLoading(true);
-      storeLogin(userData, token);
-      if (userData.role === "ADMIN") {
-        redirect("/dashboard");
-      } else {
-        redirect("/waiting");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      setLoading(true);
-      storeLogout();
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return {
     user,
     token,
     isLoading,
     isAuthenticated,
-    loginUser,
+    error,
+    login,
     logout,
+    validateToken,
     setLoading,
+    clearError,
   };
 };
 
+// Additional hooks for specific use cases
 export const useAuthLoading = () => {
-  const isLoading = useAuthStore((state) => state.isLoading);
-  return isLoading;
+  return useAuthStore((state) => state.isLoading);
 };
+
+export const useAuthError = () => {
+  return useAuthStore((state) => state.error);
+};
+
+export const useIsAuthenticated = () => {
+  return useAuthStore((state) => state.isAuthenticated);
+};
+
+// Initialize axios interceptor for handling auth errors
+// Interface for axios error response
+interface AuthErrorResponse {
+  status?: number;
+  data?: {
+    message?: string;
+    success?: boolean;
+  };
+}
+
+// Interface for axios error with custom response type
+interface AuthAxiosError extends AxiosError {
+  response?: AxiosResponse<any> & AuthErrorResponse;
+}
+
+AuthApiInstance.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  (error: AuthAxiosError) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      useAuthStore.getState().logout();
+    }
+    return Promise.reject(error);
+  }
+);
