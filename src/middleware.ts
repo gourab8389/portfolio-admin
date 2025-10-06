@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get("token")?.value;
+  // FIXED: Use the correct cookie name
+  const token = request.cookies.get("portfolio-admin-token")?.value;
   const pathname = request.nextUrl.pathname;
 
   const publicRoutes = ["/", "/auth/login", "/auth/signup"];
@@ -16,8 +17,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-
-  if (pathname === "/") {
+  if (pathname === "/" && token) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

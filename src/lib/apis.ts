@@ -2,7 +2,10 @@ import axios, { AxiosInstance } from "axios";
 import Cookies from "js-cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001";
-const token = Cookies.get("token");
+
+console.log("API_URL:", API_URL);
+
+const token = Cookies.get("portfolio-admin-token");
 
 export const PublicApiInstance = () => {
   return axios.create({
@@ -14,7 +17,7 @@ export const PublicApiInstance = () => {
 };
 
 export const AuthApiInstance = axios.create({
-  baseURL: `${API_URL}/api/auth`,
+  baseURL: `${API_URL}/api/admin`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -24,14 +27,14 @@ export const AdminApiInstance = axios.create({
   baseURL: `${API_URL}/api/admin`,
   headers: {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
+    Authorization: token ? `Bearer ${token}` : "",
   },
 });
 
 const addAuthInterceptor = (instance: AxiosInstance) => {
   instance.interceptors.request.use(
     (config) => {
-      const token = Cookies.get("token");
+      const token = Cookies.get("portfolio-admin-token");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -43,5 +46,3 @@ const addAuthInterceptor = (instance: AxiosInstance) => {
 
 addAuthInterceptor(AuthApiInstance);
 addAuthInterceptor(AdminApiInstance);
-
-

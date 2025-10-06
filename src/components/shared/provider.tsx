@@ -8,23 +8,14 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { validateToken, token } = useAuth();
+  const { token } = useAuth();
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      if (token) {
-        try {
-          await validateToken();
-        } catch (error) {
-          console.error('Auth validation failed:', error);
-        }
-      }
-      setIsInitialized(true);
-    };
-
-    initializeAuth();
-  }, []); // Only run once on mount
+    // Simply check if token exists in the store
+    // The axios interceptor will handle invalid tokens automatically
+    setIsInitialized(true);
+  }, []);
 
   // Don't render children until auth is initialized
   // This prevents hydration issues
@@ -41,14 +32,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 // Alternative: Minimal auth initializer that doesn't block rendering
 export function AuthInitializer({ children }: AuthProviderProps) {
-  const { validateToken, token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    // Only validate if we have a token
+    // Token will be automatically set in axios headers by zustand persist
+    // If token is invalid, the axios interceptor will clear auth on 401
     if (token) {
-      validateToken().catch(console.error);
+      console.log('Auth initialized with token');
     }
-  }, [token, validateToken]);
+  }, [token]);
 
   return <>{children}</>;
 }

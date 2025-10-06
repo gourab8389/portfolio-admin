@@ -5,16 +5,10 @@ import { AxiosResponse, AxiosError } from 'axios';
 import { AuthApiInstance } from "@/lib/apis";
 
 export type AuthUser = {
-  id: number;
-  username: string;
+  id?: number;
   email: string;
   role: 'admin';
 };
-
-export interface LoginRequest {
-  username: string;
-  password: string;
-}
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -22,27 +16,14 @@ export interface ApiResponse<T = any> {
   data?: T;
 }
 
-export interface LoginResponse extends ApiResponse<{
-  user: AuthUser;
-  token: string;
-}> {}
-
 interface AuthState {
   user: AuthUser | null;
   token: string | null;
-  isLoading: boolean;
   isAuthenticated: boolean;
-  error: string | null;
   
-  // Actions
-  setUser: (user: AuthUser | null) => void;
-  setToken: (token: string | null) => void;
-  setLoading: (isLoading: boolean) => void;
-  setError: (error: string | null) => void;
-  login: (credentials: LoginRequest) => Promise<void>;
-  logout: () => Promise<void>;
-  validateToken: () => Promise<boolean>;
-  clearError: () => void;
+  // Actions - Only for state management
+  setAuth: (token: string, user: AuthUser) => void;
+  clearAuth: () => void;
 }
 
 const TOKEN_KEY = "portfolio-admin-token";
@@ -50,142 +31,44 @@ const TOKEN_EXPIRY_DAYS = 7;
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
-      isLoading: false,
       isAuthenticated: false,
-      error: null,
 
-      setUser: (user) => set({ user }),
-      
-      setToken: (token) => {
-        set({ token });
-        if (token) {
-          Cookies.set(TOKEN_KEY, token, { 
-            path: "/", 
-            expires: TOKEN_EXPIRY_DAYS,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict'
-          });
-        } else {
-          Cookies.remove(TOKEN_KEY, { path: "/" });
-        }
+      setAuth: (token: string, user: AuthUser) => {
+        // Set token in cookies
+        Cookies.set(TOKEN_KEY, token, { 
+          path: "/", 
+          expires: TOKEN_EXPIRY_DAYS,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict'
+        });
+        
+        // Update axios instance default headers
+        AuthApiInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // Update store state
+        set({
+          user,
+          token,
+          isAuthenticated: true,
+        });
       },
 
-      setLoading: (isLoading) => set({ isLoading }),
-      
-      setError: (error) => set({ error }),
-      
-      clearError: () => set({ error: null }),
-
-      login: async (credentials: LoginRequest) => {
-        set({ isLoading: true, error: null });
+      clearAuth: () => {
+        // Remove token from cookies
+        Cookies.remove(TOKEN_KEY, { path: "/" });
         
-        try {
-          const response = await AuthApiInstance.post<LoginResponse>('/login', credentials);
-          
-          if (response.data.success && response.data.data) {
-            const { user, token } = response.data.data;
-            
-            // Set token in cookies
-            Cookies.set(TOKEN_KEY, token, { 
-              path: "/", 
-              expires: TOKEN_EXPIRY_DAYS,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'strict'
-            });
-            
-            // Update axios instance default headers
-            AuthApiInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            
-            set({
-              user,
-              token,
-              isAuthenticated: true,
-              isLoading: false,
-              error: null
-            });
-            
-          } else {
-            throw new Error(response.data.message || 'Login failed');
-          }
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.message || error.message || 'Login failed';
-          set({ 
-            error: errorMessage,
-            isLoading: false,
-            isAuthenticated: false,
-            user: null,
-            token: null
-          });
-          
-          // Remove token from cookies on error
-          Cookies.remove(TOKEN_KEY, { path: "/" });
-          delete AuthApiInstance.defaults.headers.common['Authorization'];
-          
-          throw new Error(errorMessage);
-        }
-      },
-
-      logout: async () => {
-        set({ isLoading: true });
+        // Remove authorization header from axios
+        delete AuthApiInstance.defaults.headers.common['Authorization'];
         
-        try {
-          // Remove token from cookies
-          Cookies.remove(TOKEN_KEY, { path: "/" });
-          
-          // Remove authorization header from axios
-          delete AuthApiInstance.defaults.headers.common['Authorization'];
-          
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null
-          });
-          
-        } catch (error) {
-          console.error('Logout error:', error);
-          // Still clear the state even if there's an error
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-            isLoading: false,
-            error: null
-          });
-        }
-      },
-
-      validateToken: async () => {
-        const { token } = get();
-        
-        if (!token) {
-          set({ isAuthenticated: false, user: null });
-          return false;
-        }
-        
-        try {
-          // Set authorization header
-          AuthApiInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          
-          const response = await AuthApiInstance.get<ApiResponse<{ admin: { email: string } }>>('/validate');
-          
-          if (response.data.success) {
-            set({ isAuthenticated: true });
-            return true;
-          } else {
-            // Token is invalid
-            get().logout();
-            return false;
-          }
-        } catch (error) {
-          console.error('Token validation failed:', error);
-          get().logout();
-          return false;
-        }
+        // Clear store state
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+        });
       },
     }),
     {
@@ -196,14 +79,11 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       
-      // Rehydrate the store and validate token on app load
+      // Rehydrate the store on app load
       onRehydrateStorage: () => (state) => {
         if (state?.token) {
           // Set the authorization header if token exists
           AuthApiInstance.defaults.headers.common['Authorization'] = `Bearer ${state.token}`;
-          
-          // Validate token on rehydration
-          state.validateToken();
         }
       },
     }
@@ -215,44 +95,25 @@ export const useAuth = () => {
   const {
     user,
     token,
-    isLoading,
     isAuthenticated,
-    error,
-    login,
-    logout,
-    validateToken,
-    setLoading,
-    clearError,
+    setAuth,
+    clearAuth,
   } = useAuthStore();
 
   return {
     user,
     token,
-    isLoading,
     isAuthenticated,
-    error,
-    login,
-    logout,
-    validateToken,
-    setLoading,
-    clearError,
+    setAuth,
+    clearAuth,
   };
 };
 
 // Additional hooks for specific use cases
-export const useAuthLoading = () => {
-  return useAuthStore((state) => state.isLoading);
-};
-
-export const useAuthError = () => {
-  return useAuthStore((state) => state.error);
-};
-
 export const useIsAuthenticated = () => {
   return useAuthStore((state) => state.isAuthenticated);
 };
 
-// Initialize axios interceptor for handling auth errors
 // Interface for axios error response
 interface AuthErrorResponse {
   status?: number;
@@ -267,12 +128,13 @@ interface AuthAxiosError extends AxiosError {
   response?: AxiosResponse<any> & AuthErrorResponse;
 }
 
+// Initialize axios interceptor for handling auth errors
 AuthApiInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AuthAxiosError) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      useAuthStore.getState().logout();
+      // Token expired or invalid - clear auth
+      useAuthStore.getState().clearAuth();
     }
     return Promise.reject(error);
   }
