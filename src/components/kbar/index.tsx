@@ -1,5 +1,4 @@
 'use client';
-import { navItems } from '@/constants/data';
 import {
   KBarAnimator,
   KBarPortal,
@@ -11,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import RenderResults from './render-result';
 import useThemeSwitching from './use-theme-switching';
+import { navItems } from '@/constants/data';
 
 export default function KBar({ children }: { children: React.ReactNode }) {
   const router = useRouter();
