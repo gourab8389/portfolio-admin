@@ -6,10 +6,11 @@ export interface ApiResponse<T = any> {
 
 export interface Profile {
   id: number;
-  name: string;
   email: string;
+  name: string;
+  phoneNumber?: string;
+  address?: string;
   bio?: string;
-  phone?: string;
   location?: string;
   website?: string;
   linkedinUrl?: string;
@@ -45,7 +46,7 @@ export interface Skill {
   updatedAt: string;
 }
 
-export type ExperienceType = 'organization' | 'internship' | 'college_event';
+export type ExperienceType = "organization" | "internship" | "college_event";
 
 export interface Experience {
   id: number;
@@ -65,7 +66,7 @@ export interface Experience {
   updatedAt: string;
 }
 
-export type ProjectType = 'personal' | 'client' | 'academic' | 'internship';
+export type ProjectType = "personal" | "client" | "academic" | "internship";
 
 export interface Project {
   id: number;
@@ -77,7 +78,7 @@ export interface Project {
   technologies?: string[];
   features?: string[];
   images?: string[];
-  status?: 'completed' | 'in-progress' | 'planned';
+  status?: "completed" | "in-progress" | "planned";
   startDate?: string;
   endDate?: string;
   featured?: boolean;
@@ -107,7 +108,7 @@ export interface AuthUser {
   id: number;
   username: string;
   email: string;
-  role: 'admin';
+  role: "admin";
 }
 
 export interface LoginRequest {
@@ -115,7 +116,8 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface LoginResponse extends ApiResponse<{
-  user: AuthUser;
-  token: string;
-}> {}
+export interface LoginResponse
+  extends ApiResponse<{
+    user: AuthUser;
+    token: string;
+  }> {}

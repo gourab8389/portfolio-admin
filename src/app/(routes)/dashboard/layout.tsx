@@ -23,7 +23,9 @@ export default async function DashboardLayout({
         <AppSidebar />
         <SidebarInset>
           <Header />
-          {children}
+          <div className="p-3 w-full">
+            {children}
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </KBar>
