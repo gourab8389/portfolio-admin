@@ -7,14 +7,12 @@ console.log("API_URL:", API_URL);
 
 const token = Cookies.get("portfolio-admin-token");
 
-export const PublicApiInstance = () => {
-  return axios.create({
-    baseURL: `${API_URL}/api`,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-};
+export const PublicApiInstance = axios.create({
+  baseURL: `${API_URL}/api`,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 export const AuthApiInstance = axios.create({
   baseURL: `${API_URL}/api/admin`,
