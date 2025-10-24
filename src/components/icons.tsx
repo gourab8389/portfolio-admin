@@ -50,6 +50,7 @@ import {
   Inbox,
   FileUser,
   ReceiptText,
+  BookA
 } from "lucide-react";
 import { PiPackageFill } from "react-icons/pi";
 import { IoIosList } from "react-icons/io";
@@ -112,6 +113,7 @@ export const Icons = {
   billingMenu:ReceiptText,
   inbox: Inbox,
   fileUser: FileUser,
+  education: BookA,
   gitHub: ({ ...props }: LucideProps) => (
     <svg
       aria-hidden="true"

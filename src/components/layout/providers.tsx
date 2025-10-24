@@ -38,7 +38,7 @@ export const Providers = ({ children }: PropsWithChildren) => {
           disableTransitionOnChange
         > */}
           {children}
-          {/* <ToasterNextTheme /> */}
+          <ToasterNextTheme />
         {/* </ThemeProvider> */}
       </NuqsAdapter>
     </QueryClientProvider>
