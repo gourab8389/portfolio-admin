@@ -14,6 +14,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     // Simply check if token exists in the store
     // The axios interceptor will handle invalid tokens automatically
+    if (token) {
+      console.log('Auth initialized with token');
+    }
+    
     setIsInitialized(true);
   }, []);
 

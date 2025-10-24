@@ -47,6 +47,7 @@ import { OrgSwitcher } from "../org-switcher";
 import { navItems } from "@/constants/data";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "../ui/button";
+import { User } from "lucide-react";
 export const company = {
   name: "Acme Inc",
   logo: IconPhotoUp,
@@ -82,11 +83,12 @@ export default function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <OrgSwitcher
+        {/* <OrgSwitcher
           tenants={tenants}
           defaultTenant={activeTenant}
           onTenantSwitch={handleSwitchTenant}
-        />
+        /> */}
+        <User/>
       </SidebarHeader>
       <SidebarContent className="overflow-x-hidden">
         <SidebarGroup>
