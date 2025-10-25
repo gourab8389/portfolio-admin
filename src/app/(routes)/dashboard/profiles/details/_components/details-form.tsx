@@ -24,9 +24,6 @@ import { AdminApiInstance, PublicApiInstance } from "@/lib/apis";
 import { Textarea } from "@/components/ui/textarea";
 import { Profile } from "@/types/object";
 
-// i want to format date like '2 hours ago', '3 days ago' convert to this format 2025-10-24T18:04:33.180Z
-import { formatDistanceToNow } from "date-fns";
-
 const profileSchema = zod.object({
   email: zod.string().email(),
   name: zod.string().min(2),
@@ -329,12 +326,11 @@ const DetailsFormPage = () => {
             )}
           />
           <div className="flex items-center justify-between">
-            <p className="font-medium">
-              Updated Last: {" "}
+            <p className="font-medium">Updated Last:
               <span className="text-muted-foreground text-sm">
-                {formatDistanceToNow(new Date(profile?.updatedAt || ""), {
-                  addSuffix: true,
-                })}
+                {profile?.updatedAt
+                  ? ` ${new Date(profile.updatedAt).toLocaleDateString()}`
+                  : " N/A"}
               </span>
             </p>
             <Button

@@ -23,6 +23,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { AdminApiInstance, PublicApiInstance } from "@/lib/apis";
 import { Education } from "@/types/object";
 import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const educationSchema = zod.object({
   name: zod.string().min(1, "Name is required"),
@@ -204,7 +205,11 @@ const EducationForm = () => {
                 <FormItem>
                   <FormLabel>Start Date</FormLabel>
                   <FormControl>
-                    {/* <Calendar placeholder="Start Date" {...field} /> */}
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select start date"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -217,7 +222,11 @@ const EducationForm = () => {
                 <FormItem>
                   <FormLabel>End Date</FormLabel>
                   <FormControl>
-                    <Input placeholder="End Date" {...field} />
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select end date"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
