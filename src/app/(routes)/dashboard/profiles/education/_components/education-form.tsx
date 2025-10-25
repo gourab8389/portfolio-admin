@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "@pheralb/toast";
-import { Loader2, Plus, Minus } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { AdminApiInstance, PublicApiInstance } from "@/lib/apis";
 import { Education } from "@/types/object";
@@ -208,7 +208,7 @@ const EducationForm = () => {
                     className="absolute top-3 right-3 h-8 w-8"
                     onClick={() => handleRemoveEducation(index)}
                   >
-                    <Minus className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
 
