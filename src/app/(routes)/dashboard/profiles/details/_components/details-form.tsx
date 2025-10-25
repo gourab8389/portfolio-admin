@@ -24,6 +24,9 @@ import { AdminApiInstance, PublicApiInstance } from "@/lib/apis";
 import { Textarea } from "@/components/ui/textarea";
 import { Profile } from "@/types/object";
 
+// i want to format date like '2 hours ago', '3 days ago' convert to this format 2025-10-24T18:04:33.180Z
+import { formatDistanceToNow } from "date-fns";
+
 const profileSchema = zod.object({
   email: zod.string().email(),
   name: zod.string().min(2),
@@ -151,7 +154,6 @@ const DetailsFormPage = () => {
       mutate(data);
     }
   };
-
 
   return (
     <Card className="p-5">
@@ -326,16 +328,26 @@ const DetailsFormPage = () => {
               </FormItem>
             )}
           />
-          <Button
-            type="submit"
-            disabled={isPending || isUpdating || !form.formState.isDirty}
-            className="w-fit self-end"
-          >
-            {isPending || isUpdating ? (
-              <Loader2 className="mr-2 animate-spin" />
-            ) : null}
-            Save Changes
-          </Button>
+          <div className="flex items-center justify-between">
+            <p className="font-medium">
+              Updated Last: {" "}
+              <span className="text-muted-foreground text-sm">
+                {formatDistanceToNow(new Date(profile?.updatedAt || ""), {
+                  addSuffix: true,
+                })}
+              </span>
+            </p>
+            <Button
+              type="submit"
+              disabled={isPending || isUpdating || !form.formState.isDirty}
+              className="w-fit"
+            >
+              {isPending || isUpdating ? (
+                <Loader2 className="mr-2 animate-spin" />
+              ) : null}
+              Save Changes
+            </Button>
+          </div>
         </form>
       </Form>
     </Card>
