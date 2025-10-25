@@ -4,10 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
-import zod from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { Card } from "@/components/ui/card";
 import {
   Form,
@@ -18,231 +14,321 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "@pheralb/toast";
-import { Loader2 } from "lucide-react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { Loader2, Plus, Minus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { AdminApiInstance, PublicApiInstance } from "@/lib/apis";
 import { Education } from "@/types/object";
-import { Calendar } from "@/components/ui/calendar";
-import { DatePicker } from "@/components/ui/date-picker";
+import { useFieldArray, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
-const educationSchema = zod.object({
-  name: zod.string().min(1, "Name is required"),
-  stream: zod.string().min(1, "Stream is required"),
-  grade: zod.string().min(1, "Grade is required"),
-  degree: zod.string().min(1, "Degree is required"),
-  startDate: zod.string().optional(),
-  endDate: zod.string().optional(),
+const educationSchema = z.object({
+  educations: z.array(
+    z.object({
+      id: z.number().optional(),
+      name: z.string().min(1, "Institute name is required"),
+      stream: z.string().min(1, "Stream is required"),
+      grade: z.string().min(1, "Grade is required"),
+      degree: z.string().min(1, "Degree is required"),
+      startDate: z.string().optional().refine(
+        (val) => !val || /^\d{4}$/.test(val),
+        { message: "Please enter a valid year (e.g., 2022)" }
+      ),
+      endDate: z.string().optional().refine(
+        (val) => !val || /^\d{4}$/.test(val),
+        { message: "Please enter a valid year (e.g., 2024)" }
+      ),
+    })
+  ),
 });
 
-type EducationFormInputs = zod.infer<typeof educationSchema>;
+type EducationFormInputs = z.infer<typeof educationSchema>;
 
 interface EducationApiResponse {
   success: boolean;
   message: string;
-  data: Education | null;
+  data: Education[];
 }
 
 const EducationForm = () => {
   const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const form = useForm<EducationFormInputs>({
+    resolver: zodResolver(educationSchema),
+    defaultValues: {
+      educations: [
+        {
+          name: "",
+          stream: "",
+          grade: "",
+          degree: "",
+          startDate: "",
+          endDate: "",
+        },
+      ],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "educations",
+  });
 
   const { data: response, isLoading } = useQuery<EducationApiResponse>({
     queryKey: ["get-education"],
     queryFn: async () => {
       const response = await PublicApiInstance.get("/education");
-      const data = response.data;
-      return data;
+      return response.data;
     },
   });
 
-  const education = response?.data;
+  useEffect(() => {
+    if (response?.data && response.data.length > 0) {
+      form.reset({
+        educations: response.data.map((edu) => ({
+          id: edu.id,
+          name: edu.name,
+          stream: edu.stream,
+          grade: edu.grade,
+          degree: edu.degree,
+          startDate: edu.startDate || "",
+          endDate: edu.endDate || "",
+        })),
+      });
+    }
+  }, [response, form]);
 
-  console.log(education);
-
-  const form = useForm<EducationFormInputs>({
-    resolver: zodResolver(educationSchema),
-    defaultValues: {
+  const handleAddEducation = () => {
+    append({
       name: "",
       stream: "",
       grade: "",
       degree: "",
       startDate: "",
       endDate: "",
-    },
-  });
+    });
+  };
 
-  useEffect(() => {
-    if (education) {
-      form.reset({
-        name: education.name,
-        stream: education.stream,
-        grade: education.grade,
-        degree: education.degree,
-        startDate: education.startDate,
-        endDate: education.endDate,
-      });
-    }
-  }, [education, form]);
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (data: EducationFormInputs) => {
-      const res = await AdminApiInstance.post("/education", data);
-      return res.data;
-    },
-    onSuccess: (data) => {
-      if (data.success) {
-        toast.success({ text: "Education updated successfully!" });
-      } else {
-        toast.error({ text: data.message || "Education update failed" });
-      }
-      router.refresh();
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Education update failed";
-      toast.error({ text: errorMessage });
-    },
-  });
-
-  const { mutate: updateEducation, isPending: isUpdating } = useMutation({
-    mutationFn: async (data: EducationFormInputs) => {
-      const res = await AdminApiInstance.put(
-        `/education/${education?.id}`,
-        data
-      );
-      return res.data;
-    },
-    onSuccess: (data) => {
-      if (data.success) {
-        toast.success({ text: "Education updated successfully!" });
-      } else {
-        toast.error({ text: data.message || "Education update failed" });
-      }
-      router.refresh();
-    },
-    onError: (error: any) => {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Education update failed";
-      toast.error({ text: errorMessage });
-    },
-  });
-
-  const onSubmit = (data: EducationFormInputs) => {
-    if (education) {
-      updateEducation(data);
-    } else {
-      mutate(data);
+  const handleRemoveEducation = (index: number) => {
+    if (fields.length > 1) {
+      remove(index);
     }
   };
+
+  const onSubmit = async (data: EducationFormInputs) => {
+    setIsSaving(true);
+    try {
+      const originalData = response?.data || [];
+      const originalIds = originalData.map((e) => e.id);
+      const currentIds = data.educations
+        .filter((e) => e.id)
+        .map((e) => e.id) as number[];
+
+      const idsToDelete = originalIds.filter((id) => !currentIds.includes(id));
+
+      const deletionPromises = idsToDelete.map((id) =>
+        AdminApiInstance.delete(`/education/${id}`)
+      );
+
+      const savePromises = data.educations.map((edu) => {
+        const payload = {
+          name: edu.name,
+          stream: edu.stream,
+          grade: edu.grade,
+          degree: edu.degree,
+          startDate: edu.startDate || undefined,
+          endDate: edu.endDate || undefined,
+        };
+
+        if (edu.id) {
+          return AdminApiInstance.put(`/education/${edu.id}`, payload);
+        } else {
+          return AdminApiInstance.post("/education", payload);
+        }
+      });
+
+      await Promise.all([...deletionPromises, ...savePromises]);
+
+      toast.success({ text: "Education updated successfully!" });
+      router.refresh();
+
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to save education";
+      toast.error({ text: errorMessage });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="p-5">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-5">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-6"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Institute Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="degree"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Degree</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Degree" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="stream"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Stream</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Stream" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="grade"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Grade</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Grade" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="startDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Start Date</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Select start date"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="endDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>End Date</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Select end date"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Education Details</h2>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddEducation}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Education
+            </Button>
           </div>
-          <Button
-            type="submit"
-            disabled={isPending || isUpdating || !form.formState.isDirty}
-            className="w-fit self-end"
-          >
-            {isPending || isUpdating ? (
-              <Loader2 className="mr-2 animate-spin" />
-            ) : null}
-            Save Changes
-          </Button>
+
+          <div className="flex flex-col gap-6">
+            {fields.map((field, index) => (
+              <div
+                key={field.id}
+                className="relative border rounded-lg p-5 bg-card"
+              >
+                {fields.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-3 right-3 h-8 w-8"
+                    onClick={() => handleRemoveEducation(index)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                )}
+
+                <h3 className="text-sm font-medium mb-4 text-muted-foreground">
+                  Education {index + 1}
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name={`educations.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Institute Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter institute name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`educations.${index}.degree`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Degree</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter degree" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`educations.${index}.stream`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Stream</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter stream" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`educations.${index}.grade`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Grade</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter grade" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`educations.${index}.startDate`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start Year</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., 2020"
+                            maxLength={4}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`educations.${index}.endDate`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>End Year</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., 2024"
+                            maxLength={4}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={isSaving || !form.formState.isDirty}
+              className="w-fit"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </div>
         </form>
       </Form>
     </Card>

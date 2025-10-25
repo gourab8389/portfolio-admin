@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { Calendar } from "lucide-react";
+import { Calendar, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -18,15 +18,20 @@ interface DatePickerProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  fromYear?: number;
+  toYear?: number;
 }
 
 export function DatePicker({
   value,
   onChange,
-  placeholder = "Pick a date",
+  placeholder = "Select date",
   disabled = false,
   className,
+  fromYear = 1900,
+  toYear = new Date().getFullYear() + 10,
 }: DatePickerProps) {
+  const [open, setOpen] = React.useState(false);
   const [date, setDate] = React.useState<Date | undefined>(
     value ? new Date(value) : undefined
   );
@@ -42,22 +47,26 @@ export function DatePicker({
     if (onChange && selectedDate) {
       onChange(selectedDate.toISOString());
     }
+    setOpen(false);
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           disabled={disabled}
-          data-empty={!date}
           className={cn(
-            "w-full justify-start text-left font-normal data-[empty=true]:text-muted-foreground",
+            "w-full justify-between text-left font-normal",
+            !date && "text-muted-foreground",
             className
           )}
         >
-          <Calendar className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>{placeholder}</span>}
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            {date ? format(date, "PPP") : <span>{placeholder}</span>}
+          </div>
+          <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -65,6 +74,9 @@ export function DatePicker({
           mode="single"
           selected={date}
           onSelect={handleSelect}
+          captionLayout="dropdown"
+          fromYear={fromYear}
+          toYear={toYear}
           initialFocus
         />
       </PopoverContent>
