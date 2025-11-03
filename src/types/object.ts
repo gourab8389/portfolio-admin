@@ -49,17 +49,12 @@ export type ExperienceType = "organization" | "internship" | "college_event";
 export interface Experience {
   id: number;
   organizationName: string;
+  organizationImage?: string;
   role: string;
   description: string;
   startDate: string;
   endDate?: string;
   type: ExperienceType;
-  location?: string;
-  technologies?: string[];
-  achievements?: string[];
-  website?: string;
-  logo?: string;
-  isCurrentRole?: boolean;
   createdAt: string;
   updatedAt: string;
 }
