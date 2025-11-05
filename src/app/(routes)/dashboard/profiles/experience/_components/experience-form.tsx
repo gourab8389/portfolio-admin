@@ -49,14 +49,8 @@ const experienceSchema = z.object({
       organizationImage: z.string().optional(),
       role: z.string().min(1, "Role is required"),
       description: z.string().min(1, "Description is required"),
-      startDate: z.string().optional().refine(
-        (val) => !val || /^\d{4}$/.test(val),
-        { message: "Please enter a valid year (e.g., 2022)" }
-      ),
-      endDate: z.string().optional().refine(
-        (val) => !val || /^\d{4}$/.test(val),
-        { message: "Please enter a valid year (e.g., 2024)" }
-      ),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
       type: z.enum(['organization', 'internship', 'college_event']).optional(),
     })
   ),
