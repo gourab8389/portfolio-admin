@@ -29,7 +29,8 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 export interface CreateExperienceRequest {
   organizationName: string;
@@ -38,7 +39,7 @@ export interface CreateExperienceRequest {
   description: string;
   startDate: Date;
   endDate?: Date;
-  type: 'organization' | 'internship' | 'college_event';
+  type: "organization" | "internship" | "college_event";
 }
 
 const experienceSchema = z.object({
@@ -51,7 +52,7 @@ const experienceSchema = z.object({
       description: z.string().min(1, "Description is required"),
       startDate: z.string().optional(),
       endDate: z.string().optional(),
-      type: z.enum(['organization', 'internship', 'college_event']).optional(),
+      type: z.enum(["organization", "internship", "college_event"]).optional(),
     })
   ),
 });
@@ -79,7 +80,7 @@ const ExperienceForm = () => {
           description: "",
           startDate: "",
           endDate: "",
-          type: 'organization',
+          type: "organization",
         },
       ],
     },
@@ -109,7 +110,7 @@ const ExperienceForm = () => {
           description: edu.description || "",
           startDate: edu.startDate || "",
           endDate: edu.endDate || "",
-          type: edu.type || 'organization',
+          type: edu.type || "organization",
         })),
       });
     }
@@ -123,7 +124,7 @@ const ExperienceForm = () => {
       description: "",
       startDate: "",
       endDate: "",
-      type: 'organization',
+      type: "organization",
     });
   };
 
@@ -170,7 +171,6 @@ const ExperienceForm = () => {
 
       toast.success({ text: "Experience updated successfully!" });
       router.refresh();
-
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message ||
@@ -242,7 +242,10 @@ const ExperienceForm = () => {
                       <FormItem>
                         <FormLabel>Organization Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter organization name" {...field} />
+                          <Input
+                            placeholder="Enter organization name"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -256,35 +259,10 @@ const ExperienceForm = () => {
                       <FormItem>
                         <FormLabel>Organization Image</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter organization image URL" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`experiences.${index}.type`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                <SelectItem value="internship">Internship</SelectItem>
-                                <SelectItem value="organization">Organization</SelectItem>
-                                <SelectItem value="college_event">College Event</SelectItem>
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
+                          <Input
+                            placeholder="Enter organization image URL"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -325,20 +303,6 @@ const ExperienceForm = () => {
 
                   <FormField
                     control={form.control}
-                    name={`experiences.${index}.description`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter description" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name={`experiences.${index}.endDate`}
                     render={({ field }) => (
                       <FormItem>
@@ -348,6 +312,58 @@ const ExperienceForm = () => {
                             placeholder="e.g., 03,2024"
                             maxLength={4}
                             {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name={`experiences.${index}.type`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectItem value="internship">
+                                  Internship
+                                </SelectItem>
+                                <SelectItem value="organization">
+                                  Organization
+                                </SelectItem>
+                                <SelectItem value="college_event">
+                                  College Event
+                                </SelectItem>
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`experiences.${index}.description`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Enter description"
+                            {...field}
+                            className="resize-none"
                           />
                         </FormControl>
                         <FormMessage />
