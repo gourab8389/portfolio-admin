@@ -37,7 +37,7 @@ export interface Education {
 export interface Skill {
   id: number;
   name: string;
-  proficiency: number;
+  proficiency: string;
   category?: string;
   createdAt: string;
   updatedAt: string;

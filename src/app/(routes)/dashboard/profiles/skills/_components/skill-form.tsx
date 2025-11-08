@@ -58,7 +58,7 @@ const skillSchema = z.object({
     z.object({
       id: z.number().optional(),
       name: z.string().min(1, "Skill name is required"),
-      proficiency: z.number().min(1).max(5),
+      proficiency: z.string().min(1).max(5),
       category: z.string().optional(),
     })
   ),
@@ -82,7 +82,7 @@ const SkillForm = () => {
       skills: [
         {
           name: "",
-          proficiency: 1,
+          proficiency: "1",
           category: "",
         },
       ],
@@ -118,7 +118,7 @@ const SkillForm = () => {
   const handleAddSkill = () => {
     append({
       name: "",
-      proficiency: 1,
+      proficiency: "1",
       category: "",
     });
   };
