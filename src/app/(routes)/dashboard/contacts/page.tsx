@@ -1,27 +1,24 @@
 import Heading from "@/components/heading";
 import PageContainer from "@/components/layout/page-container";
 import { Separator } from "@/components/ui/separator";
-import ProjectForm from "./_components/project-form";
+import ContactList from "./_components/contact-list";
 
 export const metadata = {
-  title: "Project Page | Dashboard",
+  title: "Contacts Page | Dashboard",
 };
 
-const ProjectPage = async () => {
+const Contacts = () => {
   return (
     <PageContainer scrollable={true}>
       <div className="flex flex-1 flex-col space-y-4">
         <div className="flex items-start justify-between">
-          <Heading
-            title="Project Details"
-            description="Manage your project profile information"
-          />
+          <Heading title="Contacts" description="List contacts informations" />
         </div>
         <Separator />
-        <ProjectForm />
+      <ContactList />
       </div>
     </PageContainer>
   );
 };
 
-export default ProjectPage;
+export default Contacts;

@@ -33,23 +33,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/ui/tag-input";
 
-export interface ProjectLink {
-  name: string;
-  url: string;
-}
-
-export interface CreateProjectRequest {
-  name: string;
-  type: "personal" | "client" | "academic" | "internship";
-  image?: string;
-  description: string;
-  githubLinks: ProjectLink[];
-  projectLinks: ProjectLink[];
-  technologies?: string[];
-  startDate?: string;
-  endDate?: string;
-}
-
 export type ProjectType = "personal" | "client" | "academic" | "internship";
 
 const projectSchema = z.object({
@@ -281,7 +264,7 @@ const ProjectForm = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name={`projects.${index}.type`}
@@ -346,6 +329,7 @@ const ProjectForm = () => {
                           <Textarea
                             placeholder="Enter project description"
                             {...field}
+                            className="resize-none"
                           />
                         </FormControl>
                         <FormMessage />
