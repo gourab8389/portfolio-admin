@@ -45,14 +45,14 @@ const projectSchema = z.object({
       description: z.string().min(1, "Description is required"),
       githubLinks: z.array(
         z.object({
-          name: z.string().min(1, "Link name is required"),
-          url: z.string().min(1, "Link URL is required").url("Invalid URL"),
+          name: z.string(),
+          url: z.string(),
         })
       ),
       projectLinks: z.array(
         z.object({
-          name: z.string().min(1, "Link name is required"),
-          url: z.string().min(1, "Link URL is required").url("Invalid URL"),
+          name: z.string(),
+          url: z.string(),
         })
       ),
       technologies: z.array(z.string()).optional(),
