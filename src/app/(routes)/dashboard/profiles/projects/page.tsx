@@ -1,7 +1,7 @@
 import Heading from "@/components/heading";
 import PageContainer from "@/components/layout/page-container";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import ProjectForm from "./_components/project-form";
 
 export const metadata = {
   title: "Project Page | Dashboard",
@@ -18,7 +18,7 @@ const ProjectPage = async () => {
           />
         </div>
         <Separator />
-        {/* <ProjectForm /> */}
+        <ProjectForm />
       </div>
     </PageContainer>
   );

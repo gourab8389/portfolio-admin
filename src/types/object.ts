@@ -68,12 +68,9 @@ export interface Project {
   githubLinks: string[];
   projectLinks: string[];
   technologies?: string[];
-  features?: string[];
-  images?: string[];
-  status?: "completed" | "in-progress" | "planned";
+  image?: string;
   startDate?: string;
   endDate?: string;
-  featured?: boolean;
   createdAt: string;
   updatedAt: string;
 }

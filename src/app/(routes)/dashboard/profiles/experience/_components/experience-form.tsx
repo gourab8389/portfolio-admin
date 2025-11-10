@@ -292,7 +292,6 @@ const ExperienceForm = () => {
                         <FormControl>
                           <Input
                             placeholder="e.g., 03,2020"
-                            maxLength={4}
                             {...field}
                           />
                         </FormControl>
@@ -310,7 +309,6 @@ const ExperienceForm = () => {
                         <FormControl>
                           <Input
                             placeholder="e.g., 03,2024"
-                            maxLength={4}
                             {...field}
                           />
                         </FormControl>
