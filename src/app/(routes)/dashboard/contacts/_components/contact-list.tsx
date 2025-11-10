@@ -251,10 +251,7 @@ const ContactList = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">Contacts</h2>
-              <p className="text-sm text-muted-foreground">
-                Manage and respond to contact submissions
-              </p>
+              <h2 className="text-lg font-medium">Contacts List</h2>
             </div>
             <Badge variant="secondary" className="text-sm">
               {response?.data.length} Total
