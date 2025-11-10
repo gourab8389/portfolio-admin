@@ -56,7 +56,12 @@ interface ContactResponse {
 
 const ContactList = () => {
   const queryClient = useQueryClient();
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>([
+    {
+      id: "createdAt",
+      desc: true,
+    },
+  ]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
