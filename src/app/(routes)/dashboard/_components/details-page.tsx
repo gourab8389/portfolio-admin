@@ -45,7 +45,7 @@ const DetailsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full h-screen">
         {[...Array(4)].map((_, i) => (
           <Card key={i} className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -63,7 +63,7 @@ const DetailsPage = () => {
   if (isError || !response?.success || !response?.data) {
     return (
       <Card className="p-10">
-        <div className="flex w-full items-center justify-center gap-2 text-muted-foreground">
+        <div className="flex w-full h-screen items-center justify-center gap-2 text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Couldn’t load your dashboard. Please try again.</span>
         </div>
@@ -142,7 +142,7 @@ const DetailsPage = () => {
             )}
           >
             {/* Subtle background accent */}
-            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-primary/10 to-primary/0 blur-2xl" />
+            <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-linear-to-br from-primary/10 to-primary/0 blur-2xl" />
 
             {/* Header */}
             <div className="flex items-center justify-between">

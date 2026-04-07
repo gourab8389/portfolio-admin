@@ -3,8 +3,6 @@ import Cookies from "js-cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001";
 
-console.log("API_URL:", API_URL);
-
 const token = Cookies.get("portfolio-admin-token");
 
 export const PublicApiInstance = axios.create({

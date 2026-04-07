@@ -1,6 +1,4 @@
-import Heading from "@/components/heading";
 import PageContainer from "@/components/layout/page-container";
-import { Separator } from "@/components/ui/separator";
 import DetailsPage from "./_components/details-page";
 
 const metadata = {

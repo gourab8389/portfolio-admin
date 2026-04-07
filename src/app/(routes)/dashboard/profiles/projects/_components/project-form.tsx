@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/ui/tag-input";
 
@@ -49,11 +50,11 @@ const projectSchema = z.object({
       ]),
       image: z.string().optional(),
       description: z.string().min(1, "Description is required"),
-      githubLinks: z.array(z.string()).optional,
+      githubLinks: z.optional(z.array(z.string())),
       isPublic: z.boolean().optional(),
-      projectLinks: z.array(z.string()).optional(),
+      projectLinks: z.optional(z.array(z.string())),
       hasDeployedLink: z.boolean().optional(),
-      technologies: z.array(z.string()).optional(),
+      technologies: z.optional(z.array(z.string())),
       startDate: z.string().optional(),
       endDate: z.string().optional(),
     }),
@@ -134,6 +135,8 @@ const ProjectForm = () => {
       image: "",
       description: "",
       githubLinks: [],
+      isPublic: false,
+      hasDeployedLink: false,
       projectLinks: [],
       technologies: [],
       startDate: "",
@@ -169,6 +172,8 @@ const ProjectForm = () => {
           image: edu.image,
           description: edu.description,
           githubLinks: edu.githubLinks || [],
+          isPublic: edu.isPublic || false,
+          hasDeployedLink: edu.hasDeployedLink || false,
           projectLinks: edu.projectLinks || [],
           technologies: edu.technologies || [],
           startDate: edu.startDate || "",
@@ -275,7 +280,7 @@ const ProjectForm = () => {
                             onValueChange={field.onChange}
                             value={field.value}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select project type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -291,6 +296,13 @@ const ProjectForm = () => {
                                 <SelectItem value="internship">
                                   Internship
                                 </SelectItem>
+                                <SelectItem value="freelance">
+                                  Freelance
+                                </SelectItem>
+                                <SelectItem value="open_source">
+                                  Open Source
+                                </SelectItem>
+                                <SelectItem value="company">Company</SelectItem>
                               </SelectGroup>
                             </SelectContent>
                           </Select>
@@ -374,66 +386,6 @@ const ProjectForm = () => {
 
                   <FormField
                     control={form.control}
-                    name={`projects.${index}.hasDeployedLink`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Has Deployed Link?</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={(value) =>
-                              field.onChange(value === "true")
-                            }
-                            value={field.value ? "true" : "false"}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select an option" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                <SelectLabel>Options</SelectLabel>
-                                <SelectItem value="true">Yes</SelectItem>
-                                <SelectItem value="false">No</SelectItem>
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`projects.${index}.isPublic`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Is Public?</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={(value) =>
-                              field.onChange(value === "true")
-                            }
-                            value={field.value ? "true" : "false"}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select an option" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                <SelectLabel>Options</SelectLabel>
-                                <SelectItem value="true">Yes</SelectItem>
-                                <SelectItem value="false">No</SelectItem>
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name={`projects.${index}.technologies`}
                     render={({ field }) => (
                       <FormItem className="md:col-span-3">
@@ -477,6 +429,42 @@ const ProjectForm = () => {
                       </FormItem>
                     )}
                   />
+
+                  <div className="flex items-center justify-end w-full gap-10">
+                    <FormField
+                    control={form.control}
+                    name={`projects.${index}.hasDeployedLink`}
+                    render={({ field }) => (
+                      <FormItem className="flex gap-2">
+                        <FormLabel>Has Deployed Link?</FormLabel>
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`projects.${index}.isPublic`}
+                    render={({ field }) => (
+                      <FormItem className="flex gap-2">
+                        <FormLabel>Github Url Public?</FormLabel>
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  </div>
                 </div>
               </div>
             ))}
