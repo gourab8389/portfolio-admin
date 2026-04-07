@@ -17,7 +17,7 @@ import { toast } from "@pheralb/toast";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { AdminApiInstance, PublicApiInstance } from "@/lib/apis";
-import { Project } from "@/types/object";
+import { Project, ProjectType } from "@/types/object";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -33,32 +33,30 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { TagInput } from "@/components/ui/tag-input";
 
-export type ProjectType = "personal" | "client" | "academic" | "internship";
-
 const projectSchema = z.object({
   projects: z.array(
     z.object({
       id: z.number().optional(),
       name: z.string().min(1, "Project name is required"),
-      type: z.enum(["personal", "client", "academic", "internship"]),
+      type: z.enum([
+        "personal",
+        "client",
+        "academic",
+        "internship",
+        "freelance",
+        "open_source",
+        "company",
+      ]),
       image: z.string().optional(),
       description: z.string().min(1, "Description is required"),
-      githubLinks: z.array(
-        z.object({
-          name: z.string(),
-          url: z.string(),
-        })
-      ),
-      projectLinks: z.array(
-        z.object({
-          name: z.string(),
-          url: z.string(),
-        })
-      ),
+      githubLinks: z.array(z.string()).optional,
+      isPublic: z.boolean().optional(),
+      projectLinks: z.array(z.string()).optional(),
+      hasDeployedLink: z.boolean().optional(),
       technologies: z.array(z.string()).optional(),
       startDate: z.string().optional(),
       endDate: z.string().optional(),
-    })
+    }),
   ),
 });
 
@@ -80,10 +78,12 @@ const ProjectForm = () => {
       projects: [
         {
           name: "",
-          type: "personal" as ProjectType,
+          type: "personal",
           image: "",
           description: "",
           githubLinks: [],
+          isPublic: false,
+          hasDeployedLink: false,
           projectLinks: [],
           technologies: [],
           startDate: "",
@@ -115,11 +115,10 @@ const ProjectForm = () => {
           type: edu.type,
           image: edu.image,
           description: edu.description,
-          githubLinks: edu.githubLinks.map((link) => ({ name: "", url: link })),
-          projectLinks: edu.projectLinks.map((link) => ({
-            name: "",
-            url: link,
-          })),
+          githubLinks: edu.githubLinks || [],
+          isPublic: edu.isPublic || false,
+          projectLinks: edu.projectLinks || [],
+          hasDeployedLink: edu.hasDeployedLink || false,
           technologies: edu.technologies || [],
           startDate: edu.startDate || "",
           endDate: edu.endDate || "",
@@ -131,7 +130,7 @@ const ProjectForm = () => {
   const handleAddProject = () => {
     append({
       name: "",
-      type: "personal" as ProjectType,
+      type: "personal",
       image: "",
       description: "",
       githubLinks: [],
@@ -160,7 +159,7 @@ const ProjectForm = () => {
       const idsToDelete = originalIds.filter((id) => !currentIds.includes(id));
 
       const deletionPromises = idsToDelete.map((id) =>
-        AdminApiInstance.delete(`/projects/${id}`)
+        AdminApiInstance.delete(`/projects/${id}`),
       );
 
       const savePromises = data.projects.map((edu) => {
@@ -169,8 +168,8 @@ const ProjectForm = () => {
           type: edu.type,
           image: edu.image,
           description: edu.description,
-          githubLinks: edu.githubLinks.map((link) => link.url),
-          projectLinks: edu.projectLinks.map((link) => link.url),
+          githubLinks: edu.githubLinks || [],
+          projectLinks: edu.projectLinks || [],
           technologies: edu.technologies || [],
           startDate: edu.startDate || "",
           endDate: edu.endDate || "",
@@ -345,21 +344,9 @@ const ProjectForm = () => {
                         <FormLabel>GitHub Links</FormLabel>
                         <FormControl>
                           <TagInput
-                            value={field.value?.map((link) => link.url) || []}
-                            onChange={(urls) => {
-                              field.onChange(
-                                urls.map((url) => ({ name: "", url }))
-                              );
-                            }}
-                            placeholder="Paste GitHub URL and press Enter"
-                            validator={(value) => {
-                              try {
-                                new URL(value);
-                                return true;
-                              } catch {
-                                return false;
-                              }
-                            }}
+                            value={(field.value as string[]) || []}
+                            onChange={field.onChange}
+                            placeholder="Type a GitHub link and press Enter"
                           />
                         </FormControl>
                         <FormMessage />
@@ -375,22 +362,70 @@ const ProjectForm = () => {
                         <FormLabel>Project Links</FormLabel>
                         <FormControl>
                           <TagInput
-                            value={field.value?.map((link) => link.url) || []}
-                            onChange={(urls) => {
-                              field.onChange(
-                                urls.map((url) => ({ name: "", url }))
-                              );
-                            }}
-                            placeholder="Paste project URL and press Enter"
-                            validator={(value) => {
-                              try {
-                                new URL(value);
-                                return true;
-                              } catch {
-                                return false;
-                              }
-                            }}
+                            value={field.value || []}
+                            onChange={field.onChange}
+                            placeholder="Type a project link and press Enter"
                           />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`projects.${index}.hasDeployedLink`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Has Deployed Link?</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={(value) =>
+                              field.onChange(value === "true")
+                            }
+                            value={field.value ? "true" : "false"}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select an option" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Options</SelectLabel>
+                                <SelectItem value="true">Yes</SelectItem>
+                                <SelectItem value="false">No</SelectItem>
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`projects.${index}.isPublic`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Is Public?</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={(value) =>
+                              field.onChange(value === "true")
+                            }
+                            value={field.value ? "true" : "false"}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select an option" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Options</SelectLabel>
+                                <SelectItem value="true">Yes</SelectItem>
+                                <SelectItem value="false">No</SelectItem>
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -422,10 +457,7 @@ const ProjectForm = () => {
                       <FormItem>
                         <FormLabel>Start Date</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="e.g., 03,2024"
-                            {...field}
-                          />
+                          <Input placeholder="e.g., 03,2024" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -439,10 +471,7 @@ const ProjectForm = () => {
                       <FormItem>
                         <FormLabel>End Date</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="e.g., 03,2024"
-                            {...field}
-                          />
+                          <Input placeholder="e.g., 03,2024" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

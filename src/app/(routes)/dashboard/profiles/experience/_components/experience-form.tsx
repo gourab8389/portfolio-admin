@@ -52,7 +52,13 @@ const experienceSchema = z.object({
       description: z.string().min(1, "Description is required"),
       startDate: z.string().optional(),
       endDate: z.string().optional(),
-      type: z.enum(["organization", "internship", "college_event"]).optional(),
+      type: z.enum([
+        "organization", 
+        "internship", 
+        "college_event",
+        "freelance",
+        "full_time"
+      ]).optional(),
     })
   ),
 });
@@ -341,6 +347,12 @@ const ExperienceForm = () => {
                                 </SelectItem>
                                 <SelectItem value="college_event">
                                   College Event
+                                </SelectItem>
+                                <SelectItem value="freelance">
+                                  Freelance
+                                </SelectItem>
+                                <SelectItem value="full_time">
+                                  Full Time
                                 </SelectItem>
                               </SelectGroup>
                             </SelectContent>

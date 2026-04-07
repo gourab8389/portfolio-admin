@@ -43,7 +43,7 @@ export interface Skill {
   updatedAt: string;
 }
 
-export type ExperienceType = "organization" | "internship" | "college_event";
+export type ExperienceType = 'organization' | 'internship' | 'college_event' | 'freelance' | 'full_time';
 
 export interface Experience {
   id: number;
@@ -58,15 +58,17 @@ export interface Experience {
   updatedAt: string;
 }
 
-export type ProjectType = "personal" | "client" | "academic" | "internship";
+export type ProjectType = 'personal' | 'client' | 'academic' | 'internship' | 'freelance' | 'open_source' | 'company';
 
 export interface Project {
   id: number;
   name: string;
   type: ProjectType;
   description: string;
-  githubLinks: string[];
-  projectLinks: string[];
+  githubLinks?: string[];
+  isPublic?: boolean;
+  projectLinks?: string[];
+  hasDeployedLink?: boolean;
   technologies?: string[];
   image?: string;
   startDate?: string;
