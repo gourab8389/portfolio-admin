@@ -47,7 +47,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     }
   }, [isAuthenticated, router]);
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
         });
 
         toast.success({ text: "Login successful!" });
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       } else {
         toast.error({ text: data.message || "Login failed" });
       }

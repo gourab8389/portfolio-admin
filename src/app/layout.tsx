@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/shared/provider";
 import { Providers } from "@/components/layout/providers";
 import { fontVariables } from "@/lib/font";
+// @ts-expect-error -- Next.js global CSS side-effect import
 import "./globals.css";
 
 const geistSans = Geist({
